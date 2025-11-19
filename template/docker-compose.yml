@@ -1,11 +1,16 @@
 services:
   ubuntu:
-    image: codescale-ubuntu-all-24.04
+    image: ${BAKE_IMAGE_NAME}
     container_name: ${COMPOSE_PROJECT_NAME}-ubuntu
     volumes:
       - ubuntu-home:/home/ubuntu
       - ~/.ssh/id_rsa.work.pub:/home/ubuntu/.ssh/authorized_keys:ro
       - ~/cli-configs:/home/ubuntu/cli-configs:ro
+    privileged: true
+    tmpfs:
+      - /run
+      - /tmp
+    cgroup: host
 
 volumes:
   ubuntu-home:
