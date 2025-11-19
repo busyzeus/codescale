@@ -1,4 +1,24 @@
 services:
+  ts-oauth:
+    image: tailscale/tailscale:stable
+    container_name: ${COMPOSE_PROJECT_NAME}-ts
+    hostname: ${COMPOSE_PROJECT_NAME}
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_EXTRA_ARGS=--advertise-tags=tag:container
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/serve.json
+      - TS_USERSPACE=false
+      - TS_SOCKET=/var/run/tailscale/tailscaled.sock
+    volumes:
+      - ts-state:/var/lib/tailscale
+      - ts-socket:/var/run/tailscale
+      - ./serve.json:/config/serve.json:ro
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - net_admin
+    restart: unless-stopped
   ubuntu:
     image: ${BAKE_IMAGE_NAME}
     container_name: ${COMPOSE_PROJECT_NAME}-ubuntu
@@ -7,6 +27,7 @@ services:
       - ~/.ssh/id_rsa.work.pub:/home/ubuntu/.ssh/authorized_keys:ro
       - ~/cli-configs:/home/ubuntu/cli-configs:ro
     privileged: true
+    network_mode: service:ts-oauth
     tmpfs:
       - /run
       - /tmp
@@ -14,4 +35,5 @@ services:
 
 volumes:
   ubuntu-home:
-
+  ts-state:
+  ts-socket:
