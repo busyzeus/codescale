@@ -6,9 +6,9 @@ set -e
 CODESCALE_DIR="$(dirname "$0")/instances"
 TEMPLATE_DIR="$(dirname "$0")/template"
 declare -A IMAGE_MAP=(
-  ["all"]="codescale-ubuntu-all:24.04"
-  ["dockerd"]="codescale-ubuntu-dockerd:24.04"
-  ["systemd"]="codescale-ubuntu-systemd:24.04"
+  ["all"]="lazyzeus/ubuntu-all:24.04"
+  ["dockerd"]="lazyzeus/ubuntu-dockerd:24.04"
+  ["systemd"]="lazyzeus/ubuntu-systemd:24.04"
 )
 
 print_usage() {

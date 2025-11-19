@@ -22,7 +22,7 @@ variable "BAKE_IMAGE_TAG" {
 
 variable "BAKE_IMAGE_PREFIX" {
   type    = string
-  default = "codescale-"
+  default = "lazyzeus/"
 }
 
 variable "BAKE_IMAGE_POSTFIX" {
