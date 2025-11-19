@@ -1,4 +1,4 @@
-FROM ubuntu-base
+FROM ubuntu-systemd-base
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive

@@ -24,8 +24,14 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME}-ubuntu
     volumes:
       - ubuntu-home:/home/ubuntu
+      - ts-socket:/var/run/tailscale
       - ~/.ssh/id_rsa.work.pub:/home/ubuntu/.ssh/authorized_keys:ro
       - ~/cli-configs:/home/ubuntu/cli-configs:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     privileged: true
     network_mode: service:ts-oauth
     tmpfs:

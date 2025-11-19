@@ -1,4 +1,4 @@
-FROM ubuntu-base
+FROM ubuntu-modernunix-base
 
 ENV DEBIAN_FRONTEND=noninteractive
 

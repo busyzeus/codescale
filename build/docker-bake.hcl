@@ -17,7 +17,7 @@ variable "BAKE_UBUNTU_BASE" {
 
 variable "BAKE_IMAGE_TAG" {
   type    = string
-  default = "latest"
+  default = "${BAKE_UBUNTU_VERSION}"
 }
 
 variable "BAKE_IMAGE_PREFIX" {
@@ -27,14 +27,14 @@ variable "BAKE_IMAGE_PREFIX" {
 
 variable "BAKE_IMAGE_POSTFIX" {
   type    = string
-  default = "-${BAKE_UBUNTU_VERSION}:${BAKE_IMAGE_TAG}"
+  default = ":${BAKE_IMAGE_TAG}"
 }
 
 target "systemd" {
   dockerfile = "systemd.dockerfile"
   context = "./builder"
   contexts = {
-    ubuntu-base = BAKE_UBUNTU_BASE
+    ubuntu-systemd-base = "${BAKE_UBUNTU_BASE}"
   }
   tags = ["${BAKE_IMAGE_PREFIX}ubuntu-systemd${BAKE_IMAGE_POSTFIX}"]
 }
@@ -44,7 +44,7 @@ target "dockerd" {
   context = "./builder"
   depends-on = ["systemd"]
   contexts = {
-    ubuntu-base = "target:systemd"
+    ubuntu-dockerd-base = "target:systemd"
   }
   tags = ["${BAKE_IMAGE_PREFIX}ubuntu-dockerd${BAKE_IMAGE_POSTFIX}"]
 }
@@ -53,7 +53,7 @@ target "gobuilder" {
   dockerfile = "gobuilder.dockerfile"
   context = "./builder"
   contexts = {
-    ubuntu-base = BAKE_UBUNTU_BASE
+    ubuntu-gobuilder-base = "${BAKE_UBUNTU_BASE}"
   }
   tags = ["${BAKE_IMAGE_PREFIX}ubuntu-gobuilder${BAKE_IMAGE_POSTFIX}"]
 }
@@ -62,7 +62,7 @@ target "vscode" {
   dockerfile = "vscode.dockerfile"
   context = "./builder"
   contexts = {
-    ubuntu-base = BAKE_UBUNTU_BASE
+    ubuntu-vscode-base = "${BAKE_UBUNTU_BASE}"
   }
   tags = ["${BAKE_IMAGE_PREFIX}ubuntu-vscode${BAKE_IMAGE_POSTFIX}"]
 }
@@ -71,7 +71,7 @@ target "modernunix" {
   dockerfile = "modernunix.dockerfile"
   context = "./builder"
   contexts = {
-    ubuntu-base = BAKE_UBUNTU_BASE
+    ubuntu-modernunix-base = "${BAKE_UBUNTU_BASE}"
   }
   tags = ["${BAKE_IMAGE_PREFIX}ubuntu-modernunix${BAKE_IMAGE_POSTFIX}"]
 }
@@ -87,7 +87,7 @@ target "ubuntu-all" {
     "modernunix"
   ]
   contexts = {
-    ubuntu-base = "target:dockerd"
+    ubuntu-all-base = "target:dockerd"
     ubuntu-gobuilder = "target:gobuilder"
     ubuntu-vscode = "target:vscode"
     ubuntu-modernunix = "target:modernunix"

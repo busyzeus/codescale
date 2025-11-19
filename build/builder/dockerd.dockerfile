@@ -1,4 +1,4 @@
-FROM ubuntu-base
+FROM ubuntu-dockerd-base
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
