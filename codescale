@@ -1,0 +1,223 @@
+#!/bin/bash
+
+set -e
+
+#CODESCALE_DIR="$HOME/.codescale"
+CODESCALE_DIR="$(dirname "$0")/instances"
+# TEMPLATE_DIR will be set dynamically based on template argument
+
+print_usage() {
+    echo "Usage: codescale <command> [args]"
+    echo ""
+    echo "Commands:"
+    echo "  init  <workspacename> <template>  Create new workspace with specified template"
+    echo "  start <workspacename> [options]   Start workspace containers"
+    echo "  stop  <workspacename>             Stop workspace containers"
+    echo "  reset <workspacename>             Delete workspace"
+    echo "  list                              List all workspaces"
+    echo "  template                          List all available templates"
+    echo ""
+}
+
+init_workspace() {
+    local workspace_name="$1"
+    local template_name="$2"
+
+    if [[ -z "$workspace_name" ]]; then
+        echo "Error: Workspace name required"
+        echo "Usage: codescale init <workspacename> <template>"
+        exit 1
+    fi
+
+    if [[ -z "$template_name" ]]; then
+        echo "Error: Template name required"
+        echo "Usage: codescale init <workspacename> <template>"
+        exit 1
+    fi
+
+    local workspace_dir="$CODESCALE_DIR/$workspace_name"
+    local template_dir="$(dirname "$0")/template/$template_name"
+
+    if [[ ! -d "$template_dir" ]]; then
+        echo "Error: Template directory not found at $template_dir"
+        exit 1
+    fi
+
+    if [[ -d "$workspace_dir" ]]; then
+        echo "Error: Workspace '$workspace_name' already exists"
+        exit 1
+    fi
+
+    echo "Creating workspace '$workspace_name' with template '$template_name'..."
+    mkdir -p "$workspace_dir"
+
+    cp -r "$template_dir"/. "$workspace_dir/"
+
+    echo "COMPOSE_PROJECT_NAME=$workspace_name" >> $workspace_dir/.env
+
+    echo "Workspace '$workspace_name' created successfully at $workspace_dir"
+}
+
+start_workspace() {
+    local workspace_name="$1"
+    shift  # Remove workspace name from arguments
+    local additional_args="$@"  # Capture remaining arguments
+
+    if [[ -z "$workspace_name" ]]; then
+        echo "Error: Workspace name required"
+        echo "Usage: codescale start <workspacename> [options]"
+        exit 1
+    fi
+
+    local workspace_dir="$CODESCALE_DIR/$workspace_name"
+
+    if [[ ! -d "$workspace_dir" ]]; then
+        echo "Error: Workspace '$workspace_name' does not exist"
+        exit 1
+    fi
+
+    echo "Starting workspace '$workspace_name'..."
+    pushd "$workspace_dir" > /dev/null
+    docker compose up -d $additional_args
+    popd > /dev/null
+    echo "Workspace '$workspace_name' started successfully"
+}
+
+stop_workspace() {
+    local workspace_name="$1"
+
+    if [[ -z "$workspace_name" ]]; then
+        echo "Error: Workspace name required"
+        echo "Usage: codescale stop <workspacename>"
+        exit 1
+    fi
+
+    local workspace_dir="$CODESCALE_DIR/$workspace_name"
+
+    if [[ ! -d "$workspace_dir" ]]; then
+        echo "Error: Workspace '$workspace_name' does not exist"
+        exit 1
+    fi
+
+    echo "Stopping workspace '$workspace_name'..."
+    pushd "$workspace_dir" > /dev/null
+    docker compose down
+    popd > /dev/null
+    echo "Workspace '$workspace_name' stopped successfully"
+}
+
+reset_workspace() {
+    local workspace_name="$1"
+
+    if [[ -z "$workspace_name" ]]; then
+        echo "Error: Workspace name required"
+        echo "Usage: codescale reset <workspacename>"
+        exit 1
+    fi
+
+    local workspace_dir="$CODESCALE_DIR/$workspace_name"
+
+    if [[ ! -d "$workspace_dir" ]]; then
+        echo "Error: Workspace '$workspace_name' does not exist"
+        exit 1
+    fi
+
+    echo "Stopping and removing workspace '$workspace_name'..."
+    pushd "$workspace_dir" > /dev/null
+    docker compose down -v 2>/dev/null || true
+    popd > /dev/null
+    rm -rf "$workspace_dir"
+    echo "Workspace '$workspace_name' reset successfully"
+
+    # https://tailscale.com/api#tag/devices/delete/device/{deviceId}
+    workspace_device_id=$(tailscale status --json | jq -r --arg host "$workspace_name" '(.Self, .Peer[]?) | select(.HostName==$host) | .ID')
+    if [ -n $workspace_device_id ]; then
+        result=$(curl -s "https://api.tailscale.com/api/v2/device/$workspace_device_id" --request DELETE --header 'Authorization: Bearer tskey-api-kkXLGDaHns11CNTRL-xoPpXZ9vq91ebY3JmE9n91S3b7znqGh6')
+        if [ "$result" == "null" ]; then
+            echo $workspace_name has been deleted from the tailscale network.
+        else 
+            echo "$result"
+        fi
+    fi
+}
+
+list_workspaces() {
+    echo "CodeScale Workspaces:"
+    echo "===================="
+
+    if [[ ! -d "$CODESCALE_DIR" ]]; then
+        echo "No workspaces found"
+        return
+    fi
+
+    for workspace_dir in "$CODESCALE_DIR"/*; do
+        if [[ -d "$workspace_dir" ]]; then
+            local workspace_name=$(basename "$workspace_dir")
+            local status="STOPPED"
+
+            if [[ -f "$workspace_dir/docker-compose.yml" ]]; then
+                pushd "$workspace_dir" > /dev/null
+                if docker compose ps -q | grep -q .; then
+                    if docker compose ps | grep -q "Up"; then
+                        status="RUNNING"
+                    fi
+                fi
+                popd > /dev/null
+            fi
+
+            printf "%-20s %s\n" "$workspace_name" "$status"
+        fi
+    done
+}
+
+list_templates() {
+    local template_dir="$(dirname "$0")/template"
+
+    echo "Available Templates:"
+    echo "==================="
+
+    if [[ ! -d "$template_dir" ]]; then
+        echo "No templates found"
+        return
+    fi
+
+    for template_path in "$template_dir"/*; do
+        if [[ -d "$template_path" ]]; then
+            local template_name=$(basename "$template_path")
+            echo "$template_name"
+        fi
+    done
+}
+
+case "$1" in
+    init)
+        init_workspace "$2" "$3"
+        ;;
+    start)
+        shift  # Remove 'start' command
+        start_workspace "$@"
+        ;;
+    stop)
+        stop_workspace "$2"
+        ;;
+    reset)
+        reset_workspace "$2"
+        ;;
+    list)
+        list_workspaces
+        ;;
+    template)
+        list_templates
+        ;;
+    help|--help|-h)
+        print_usage
+        ;;
+    "")
+        print_usage
+        ;;
+    *)
+        echo "Error: Unknown command '$1'"
+        print_usage
+        exit 1
+        ;;
+esac
