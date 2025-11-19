@@ -4,13 +4,18 @@ set -e
 
 #CODESCALE_DIR="$HOME/.codescale"
 CODESCALE_DIR="$(dirname "$0")/instances"
-# TEMPLATE_DIR will be set dynamically based on template argument
+TEMPLATE_DIR="$(dirname "$0")/template"
+declare -A IMAGE_MAP=(
+  ["all"]="codescale-ubuntu-all:24.04"
+  ["dockerd"]="codescale-ubuntu-dockerd:24.04"
+  ["systemd"]="codescale-ubuntu-systemd:24.04"
+)
 
 print_usage() {
     echo "Usage: codescale <command> [args]"
     echo ""
     echo "Commands:"
-    echo "  init  <workspacename> <template>  Create new workspace with specified template"
+    echo "  init  <workspacename> <image>  Create new workspace with specified template"
     echo "  start <workspacename> [options]   Start workspace containers"
     echo "  stop  <workspacename>             Stop workspace containers"
     echo "  reset <workspacename>             Delete workspace"
@@ -21,7 +26,7 @@ print_usage() {
 
 init_workspace() {
     local workspace_name="$1"
-    local template_name="$2"
+    local image="$2"
 
     if [[ -z "$workspace_name" ]]; then
         echo "Error: Workspace name required"
@@ -29,31 +34,25 @@ init_workspace() {
         exit 1
     fi
 
-    if [[ -z "$template_name" ]]; then
-        echo "Error: Template name required"
-        echo "Usage: codescale init <workspacename> <template>"
-        exit 1
+    if [[ -z "$image" ]]; then
+        image="all"
     fi
 
     local workspace_dir="$CODESCALE_DIR/$workspace_name"
-    local template_dir="$(dirname "$0")/template/$template_name"
-
-    if [[ ! -d "$template_dir" ]]; then
-        echo "Error: Template directory not found at $template_dir"
-        exit 1
-    fi
+    local image_name="${IMAGE_MAP[$image]}"
 
     if [[ -d "$workspace_dir" ]]; then
         echo "Error: Workspace '$workspace_name' already exists"
         exit 1
     fi
 
-    echo "Creating workspace '$workspace_name' with template '$template_name'..."
+    echo "Creating workspace '$workspace_name' with image '$image_name'..."
     mkdir -p "$workspace_dir"
 
-    cp -r "$template_dir"/. "$workspace_dir/"
+    cp -r "$TEMPLATE_DIR"/. "$workspace_dir/"
 
     echo "COMPOSE_PROJECT_NAME=$workspace_name" >> $workspace_dir/.env
+    echo "BAKE_IMAGE_NAME=$image_name" >> $workspace_dir/.env
 
     echo "Workspace '$workspace_name' created successfully at $workspace_dir"
 }
@@ -170,22 +169,12 @@ list_workspaces() {
     done
 }
 
-list_templates() {
-    local template_dir="$(dirname "$0")/template"
-
-    echo "Available Templates:"
+list_images() {
+    echo "Available Images"
     echo "==================="
 
-    if [[ ! -d "$template_dir" ]]; then
-        echo "No templates found"
-        return
-    fi
-
-    for template_path in "$template_dir"/*; do
-        if [[ -d "$template_path" ]]; then
-            local template_name=$(basename "$template_path")
-            echo "$template_name"
-        fi
+    for key in "${!IMAGE_MAP[@]}"; do
+      printf "%-10s = %s\n" "$key" "${IMAGE_MAP[$key]}"
     done
 }
 
@@ -206,8 +195,8 @@ case "$1" in
     list)
         list_workspaces
         ;;
-    template)
-        list_templates
+    image)
+        list_images
         ;;
     help|--help|-h)
         print_usage
