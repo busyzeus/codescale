@@ -13,7 +13,7 @@ RUN apt update && apt install auto-apt-proxy -y && auto-apt-proxy
 
 # Install all requested packages
 RUN apt-get update && apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends \
+    apt-get install -y \
         gnupg \
         ca-certificates \
         sudo \

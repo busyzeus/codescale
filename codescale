@@ -15,10 +15,11 @@ print_usage() {
     echo "Usage: codescale <command> [args]"
     echo ""
     echo "Commands:"
-    echo "  init  <workspacename> <image>  Create new workspace with specified template"
-    echo "  start <workspacename> [options]   Start workspace containers"
-    echo "  stop  <workspacename>             Stop workspace containers"
-    echo "  reset <workspacename>             Delete workspace"
+    echo "  init    <workspacename> <image>  Create new workspace with specified template"
+    echo "  start   <workspacename> [options]   Start workspace containers"
+    echo "  stop    <workspacename>             Stop workspace containers"
+    echo "  restart <workspacename>             Restart workspace containers"
+    echo "  reset   <workspacename>             Delete workspace"
     echo "  list                              List all workspaces"
     echo "  template                          List all available templates"
     echo ""
@@ -188,6 +189,10 @@ case "$1" in
         ;;
     stop)
         stop_workspace "$2"
+        ;;
+    restart)
+        stop_workspace "$2"
+        start_workspace "$2"
         ;;
     reset)
         reset_workspace "$2"
