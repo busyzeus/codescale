@@ -28,7 +28,6 @@ services:
       - ~/.ssh/id_rsa.work.pub:/home/ubuntu/.ssh/authorized_keys:ro
       - ~/cli-configs:/home/ubuntu/cli-configs:ro
       - containerd-lib-volume:/var/lib/containerd
-      - docker-lib-volume:/var/lib/docker
     logging:
       driver: "json-file"
       options:
@@ -46,4 +45,3 @@ volumes:
   ts-state:
   ts-socket:
   containerd-lib-volume:
-  docker-lib-volume:
