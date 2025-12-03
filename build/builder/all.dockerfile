@@ -22,6 +22,8 @@ RUN apt-get update && apt-get upgrade -y && \
         dnsutils \
         telnet \
         net-tools \
+        apt-utils \
+        whiptail \
         curl \
         sed \
         git \
