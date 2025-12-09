@@ -24,6 +24,7 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME}-ubuntu
     volumes:
       - ubuntu-home:/home/ubuntu
+      - dind-volume:/var/lib/docker
       - ts-socket:/var/run/tailscale
       - ~/.ssh/id_rsa.work.pub:/home/ubuntu/.ssh/authorized_keys:ro
       - ~/cli-configs:/home/ubuntu/cli-configs:ro
@@ -45,3 +46,4 @@ volumes:
   ts-state:
   ts-socket:
   containerd-lib-volume:
+  dind-volume:
