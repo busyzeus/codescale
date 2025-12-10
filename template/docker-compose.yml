@@ -13,7 +13,7 @@ services:
     volumes:
       - ts-state:/var/lib/tailscale
       - ts-socket:/var/run/tailscale
-      - ./tailscale:/config:ro
+      - ./tailscaled:/config:ro
     devices:
       - /dev/net/tun:/dev/net/tun
     cap_add:

@@ -42,15 +42,18 @@ init_workspace() {
     local workspace_dir="$CODESCALE_DIR/$workspace_name"
     local image_name="${IMAGE_MAP[$image]}"
 
-    if [[ -d "$workspace_dir" ]]; then
+    if [[ -f "$workspace_dir/docker-compose.yml" ]]; then
         echo "Error: Workspace '$workspace_name' already exists"
         exit 1
     fi
 
     echo "Creating workspace '$workspace_name' with image '$image_name'..."
-    mkdir -p "$workspace_dir"
+    mkdir -p "$workspace_dir/tailscaled"
 
-    cp -r "$TEMPLATE_DIR"/. "$workspace_dir/"
+    find "$TEMPLATE_DIR" -maxdepth 1 -type f -exec cp {} "$workspace_dir" \;
+    if [[ ! -f "$workspace_dir/tailscaled/serve.json" ]]; then
+      cp "$TEMPLATE_DIR/tailscaled/serve.json" "$workspace_dir/tailscaled/"
+    fi
 
     echo "COMPOSE_PROJECT_NAME=$workspace_name" >> $workspace_dir/.env
     echo "BAKE_IMAGE_NAME=$image_name" >> $workspace_dir/.env
