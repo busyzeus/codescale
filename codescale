@@ -130,16 +130,18 @@ reset_workspace() {
     docker compose down -v 2>/dev/null || true
     popd > /dev/null
     rm -rf "$workspace_dir"
+    git restore "$workspace_dir" || true
     echo "Workspace '$workspace_name' reset successfully"
 
     # https://tailscale.com/api#tag/devices/delete/device/{deviceId}
     workspace_device_id=$(tailscale status --json | jq -r --arg host "$workspace_name" '(.Self, .Peer[]?) | select(.HostName==$host) | .ID')
+    echo "workspace_device_id=${workspace_device_id}"
     if [ -n $workspace_device_id ]; then
-        result=$(curl -s "https://api.tailscale.com/api/v2/device/$workspace_device_id" --request DELETE --header 'Authorization: Bearer tskey-api-kkXLGDaHns11CNTRL-xoPpXZ9vq91ebY3JmE9n91S3b7znqGh6')
+        result=$(curl -s "https://api.tailscale.com/api/v2/device/$workspace_device_id" --request DELETE --header 'Authorization: Bearer tskey-api-kJZkPoLvAZ11CNTRL-yJz8JBYemSGqD9H2w27ySGp895SR3YMwi')
         if [ "$result" == "null" ]; then
             echo $workspace_name has been deleted from the tailscale network.
         else 
-            echo "$result"
+          echo "$result"
         fi
     fi
 }
@@ -154,19 +156,17 @@ list_workspaces() {
     fi
 
     for workspace_dir in "$CODESCALE_DIR"/*; do
-        if [[ -d "$workspace_dir" ]]; then
+        if [[ -d "$workspace_dir" && -f "$workspace_dir/docker-compose.yml" ]]; then
             local workspace_name=$(basename "$workspace_dir")
             local status="STOPPED"
 
-            if [[ -f "$workspace_dir/docker-compose.yml" ]]; then
-                pushd "$workspace_dir" > /dev/null
-                if docker compose ps -q | grep -q .; then
-                    if docker compose ps | grep -q "Up"; then
-                        status="RUNNING"
-                    fi
+            pushd "$workspace_dir" > /dev/null
+            if docker compose ps -q | grep -q .; then
+                if docker compose ps | grep -q "Up"; then
+                    status="RUNNING"
                 fi
-                popd > /dev/null
             fi
+            popd > /dev/null
 
             printf "%-20s %s\n" "$workspace_name" "$status"
         fi
