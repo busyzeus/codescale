@@ -38,7 +38,7 @@ services:
     network_mode: service:ts-oauth
     tmpfs:
       - /run
-      - /tmp
+      - /tmp:exec
     cgroup: host
 
 volumes:
