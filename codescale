@@ -10,6 +10,7 @@ declare -A IMAGE_MAP=(
   ["base"]="lazyzeus/ubuntu-base:24.04"
   ["dockerd"]="lazyzeus/ubuntu-dockerd:24.04"
   ["systemd"]="lazyzeus/ubuntu-systemd:24.04"
+  ["nix"]="lazyzeus/ubuntu-nix:24.04"
 )
 
 print_usage() {

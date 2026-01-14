@@ -43,10 +43,21 @@ target "base" {
 target "systemd" {
   dockerfile = "systemd.dockerfile"
   context = "./builder"
+  depends-on = ["base"]
   contexts = {
     ubuntu-systemd-base = "target:base"
   }
   tags = ["${BAKE_IMAGE_PREFIX}ubuntu-codescale-systemd${BAKE_IMAGE_POSTFIX}"]
+}
+
+target "nix" {
+  dockerfile = "nix.dockerfile"
+  context = "./builder"
+  depends-on = ["systemd"]
+  contexts = {
+    ubuntu-systemd-base = "target:systemd"
+  }
+  tags = ["${BAKE_IMAGE_PREFIX}ubuntu-codescale-nix${BAKE_IMAGE_POSTFIX}"]
 }
 
 target "dockerd" {
@@ -118,6 +129,18 @@ target "ubuntu-dockerd" {
     ubuntu-base = "target:dockerd"
   }
   tags = ["${BAKE_IMAGE_PREFIX}ubuntu-dockerd${BAKE_IMAGE_POSTFIX}"]
+}
+
+target "ubuntu-nix" {
+  dockerfile = "ubuntu-tailscale.dockerfile"
+  context = "./builder"
+  depends-on = [
+    "nix", 
+  ]
+  contexts = {
+    ubuntu-base = "target:nix"
+  }
+  tags = ["${BAKE_IMAGE_PREFIX}ubuntu-nix${BAKE_IMAGE_POSTFIX}"]
 }
 
 target "ubuntu-all" {
