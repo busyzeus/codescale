@@ -59,6 +59,3 @@ COPY --from=modernunix --chown=ubuntu:ubuntu /usr/local/bin/ /home/ubuntu/.local
 COPY --from=vscode --chown=ubuntu:ubuntu /root/.local/bin/ /home/ubuntu/.local/bin/
 RUN setcap 'cap_net_bind_service=+ep' /home/ubuntu/.local/bin/code
 
-
-
-

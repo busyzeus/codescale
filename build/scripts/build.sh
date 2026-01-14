@@ -2,10 +2,14 @@
 
 TARGET="${1:-ubuntu-all}"
 
+NO_CACHE=false
+if [ "$2" == "no-cache" ]; then
+  NO_CACHE=true
+fi
+
 pushd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null
-#docker buildx bake --no-cache $TARGET 
-docker buildx bake --set ubuntu-all.no-cache=true $TARGET 
-#docker buildx bake $TARGET 
+echo docker buildx bake --set ${TARGET}.no-cache=$NO_CACHE $TARGET 
+docker buildx bake --set ${TARGET}.no-cache=$NO_CACHE $TARGET 
 popd > /dev/null
 
-docker image ls | grep $TARGET
+docker image ls -a --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}\t{{.CreatedAt}}\t{{.ID}}" | grep -E "REPOSITORY|$TARGET"

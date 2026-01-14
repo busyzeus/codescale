@@ -22,7 +22,8 @@ variable "BAKE_IMAGE_TAG" {
 
 variable "BAKE_IMAGE_PREFIX" {
   type    = string
-  default = "lazyzeus/"
+  #default = "lazyzeus/"
+  default = ""
 }
 
 variable "BAKE_IMAGE_POSTFIX" {
@@ -30,13 +31,22 @@ variable "BAKE_IMAGE_POSTFIX" {
   default = ":${BAKE_IMAGE_TAG}"
 }
 
+target "base" {
+  dockerfile = "base.dockerfile"
+  context = "./builder"
+  contexts = {
+    ubuntu-base = "${BAKE_UBUNTU_BASE}"
+  }
+  tags = ["${BAKE_IMAGE_PREFIX}ubuntu-codescale-base${BAKE_IMAGE_POSTFIX}"]
+}
+
 target "systemd" {
   dockerfile = "systemd.dockerfile"
   context = "./builder"
   contexts = {
-    ubuntu-systemd-base = "${BAKE_UBUNTU_BASE}"
+    ubuntu-systemd-base = "target:base"
   }
-  tags = ["${BAKE_IMAGE_PREFIX}ubuntu-systemd${BAKE_IMAGE_POSTFIX}"]
+  tags = ["${BAKE_IMAGE_PREFIX}ubuntu-codescale-systemd${BAKE_IMAGE_POSTFIX}"]
 }
 
 target "dockerd" {
@@ -46,7 +56,7 @@ target "dockerd" {
   contexts = {
     ubuntu-dockerd-base = "target:systemd"
   }
-  tags = ["${BAKE_IMAGE_PREFIX}ubuntu-dockerd${BAKE_IMAGE_POSTFIX}"]
+  tags = ["${BAKE_IMAGE_PREFIX}ubuntu-codescale-dockerd${BAKE_IMAGE_POSTFIX}"]
 }
 
 target "gobuilder" {
@@ -76,8 +86,42 @@ target "modernunix" {
   tags = ["${BAKE_IMAGE_PREFIX}ubuntu-modernunix${BAKE_IMAGE_POSTFIX}"]
 }
 
+target "ubuntu-base" {
+  dockerfile = "base.dockerfile"
+  context = "./builder"
+  contexts = {
+    ubuntu-base = "target:base"
+  }
+  tags = ["${BAKE_IMAGE_PREFIX}ubuntu-base${BAKE_IMAGE_POSTFIX}"]
+}
+
+target "ubuntu-systemd" {
+  dockerfile = "ubuntu-tailscale.dockerfile"
+  context = "./builder"
+  depends-on = [
+    "systemd", 
+  ]
+  contexts = {
+    ubuntu-base = "target:systemd"
+  }
+  tags = ["${BAKE_IMAGE_PREFIX}ubuntu-systemd${BAKE_IMAGE_POSTFIX}"]
+}
+
+target "ubuntu-dockerd" {
+  dockerfile = "ubuntu-tailscale.dockerfile"
+  context = "./builder"
+  depends-on = [
+    "systemd", 
+    "dockerd", 
+  ]
+  contexts = {
+    ubuntu-base = "target:dockerd"
+  }
+  tags = ["${BAKE_IMAGE_PREFIX}ubuntu-dockerd${BAKE_IMAGE_POSTFIX}"]
+}
+
 target "ubuntu-all" {
-  dockerfile = "all.dockerfile"
+  dockerfile = "ubuntu-all.dockerfile"
   context = "./builder"
   depends-on = [
     "systemd", 
