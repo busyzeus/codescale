@@ -3,6 +3,9 @@ FROM ubuntu-systemd-base
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
 
+ENTRYPOINT []
+RUN rm -f /usr/local/bin/entrypoint.sh > /dev/null
+
 # Install all requested packages
 RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
